@@ -119,6 +119,10 @@ const dayDiff = (a, b) => Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.
 const jalali = d => { try { return new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", month: "long" }).format(d); } catch (e) { return ""; } };
 const jalaliFull = d => { try { return new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", month: "long", year: "numeric" }).format(d); } catch (e) { return ""; } };
 
+const gregFull = d => { try { return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(d); } catch (e) { return ""; } };
+const gregShort = d => { try { return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(d); } catch (e) { return ""; } };
+const ltr = t => '<bdi dir="ltr">' + t + "</bdi>";
+
 /* ---------- storage ---------- */
 function lsRead() { try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 function lsWrite(p) { try { if (p) localStorage.setItem(LS_KEY, JSON.stringify(p)); else localStorage.removeItem(LS_KEY); } catch (e) {} }
@@ -193,7 +197,7 @@ function renderSetup() {
   document.getElementById("surah").value = "36";
   const start = document.getElementById("start");
   const startFa = document.getElementById("startFa");
-  const upd = () => { startFa.textContent = start.value ? "شروع: " + jalaliFull(parse(start.value)) : ""; };
+  const upd = () => { startFa.textContent = start.value ? "شروع: " + jalaliFull(parse(start.value)) + " · " + gregFull(parse(start.value)) : ""; };
   start.addEventListener("input", upd); upd();
   document.getElementById("setup").addEventListener("submit", e => {
     e.preventDefault();
@@ -231,9 +235,13 @@ function renderPlan() {
     let cls = "cell";
     if (has(d)) cls += " done"; else if (d < cur) cls += " missed"; else if (d > cur) cls += " future";
     if (d === cur) cls += " today";
-    cells += '<button class="' + cls + '" data-day="' + d + '" aria-pressed="' + has(d) + '" aria-label="روز ' + fa(d) + " " + jalali(date) + '"' + (d > cur ? " disabled" : "") + ">" + fa(d) + "</button>";
+    cells += '<button class="' + cls + '" data-day="' + d + '" aria-pressed="' + has(d) + '" aria-label="روز ' + fa(d) + " " + jalali(date) + " " + gregShort(date) + '"' + (d > cur ? " disabled" : "") + ">" + fa(d) + "</button>";
   }
 
+  const endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + total - 1);
+  const now = new Date();
+  const todayLine = '<p class="sub">امروز: ' + jalaliFull(now) + " · " + ltr(gregFull(now)) + "</p>";
+  const rangeLine = '<p class="sub">از ' + jalali(startDate) + " تا " + jalaliFull(endDate) + " · " + ltr(gregShort(startDate) + " – " + gregFull(endDate)) + "</p>";
   const todayDone = inRange && has(cur);
   const checkLabel = finished ? "ختم کامل شد" : (todayDone ? "امروز خوانده شد" : "امروز خواندم");
 
@@ -247,6 +255,7 @@ function renderPlan() {
     '<section class="status"><p class="day-line">' + dayText + "</p>" +
       '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + doneCount + '"><i style="width:' + Math.round(doneCount / total * 100) + '%"></i></div>' +
       '<p class="sub">' + fa(doneCount) + " روز خوانده شده" + (missed > 0 ? " · " + fa(missed) + " روز جا افتاده" : "") + "</p>" +
+      todayLine + rangeLine +
     "</section>" +
     '<section class="card"><div class="grid">' + cells + "</div>" +
       '<p class="legend"><span>خوانده شده</span><span class="l-today">امروز</span><span class="l-missed">جا افتاده، با لمس جبران می‌شود</span></p></section>' +
