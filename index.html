@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ختم چهل‌روزه</title>
+<meta name="theme-color" content="#FBF4E6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+/* Layout: one centered column, a gold surah card on top, a daily check button, then a grid of day tiles like a wall calendar. */
+/* Palette taken from a printed mushaf page: cream paper, gold frame, olive green, deep maroon. */
+:root {
+  --bg: #FBF4E6;
+  --surface: #FFFBF2;
+  --ink: #2B2118;
+  --muted: #7A6652;
+  --line: #DCC9A3;
+  --accent: #7E2A2A;
+  --accent-ink: #FFF6E6;
+  --done: #4F6B3A;
+  --done-ink: #FFFFFF;
+  --soft: #F1E5CC;
+  --danger: #A12727;
+  --hero-bg: #CFAE72;
+  --hero-ink: #2B2118;
+  --hero-line: #8A6A32;
+  --font-body: Tahoma, "Noto Sans Arabic", Roboto, system-ui, sans-serif;
+  --font-display: "Noto Naskh Arabic", "Traditional Arabic", "Droid Arabic Naskh", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1B150F; --surface: #261F16; --ink: #F1E6D2; --muted: #B4A184; --line: #4A3E2C;
+    --accent: #E39A8A; --accent-ink: #1B150F; --done: #A3BF82; --done-ink: #18200F; --soft: #31281B; --danger: #FF9C8F;
+    --hero-bg: #4A3B22; --hero-ink: #F6E7C6; --hero-line: #B8924A;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { direction: rtl; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+  padding-top: max(20px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(40px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { margin: 0; font-size: 15px; font-weight: 600; color: var(--muted); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.hero { background: var(--hero-bg); color: var(--hero-ink); border-color: var(--hero-line); box-shadow: inset 0 0 0 5px var(--hero-bg), inset 0 0 0 6px var(--hero-line); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 20px; }
+.hero .kicker { font-size: 14px; opacity: .85; }
+.surah-ar { font-family: var(--font-display); font-size: 52px; line-height: 1.4; margin: 0; font-weight: 700; }
+.read-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 8px 16px; border-radius: 999px; background: var(--hero-ink); color: var(--hero-bg); font-weight: 600; font-size: 15px; text-decoration: none; }
+.read-link svg { width: 16px; height: 16px; }
+
+.check { width: 100%; min-height: 64px; border-radius: 14px; border: 2px solid var(--done); background: var(--surface); color: var(--done); font-size: 19px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.check svg { width: 26px; height: 26px; }
+.check[aria-pressed="true"] { background: var(--done); color: var(--done-ink); }
+.check:disabled { opacity: .5; }
+
+.status { text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.day-line { font-size: 26px; font-weight: 700; margin: 0; }
+.day-line small { font-size: 16px; font-weight: 400; color: var(--muted); }
+.bar { height: 8px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--done); width: 0; border-radius: 999px; }
+.sub { margin: 0; color: var(--muted); font-size: 14px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 8px; }
+.cell { height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; }
+.cell.done { background: var(--done); border-color: var(--done); color: var(--done-ink); }
+.cell.missed { color: var(--muted); border-style: dashed; }
+.cell.future { color: var(--muted); background: var(--soft); border-color: transparent; }
+.cell.today { outline: 3px solid var(--accent); outline-offset: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 6px; background: var(--done); }
+.legend .l-missed::before { background: transparent; border: 1px dashed var(--muted); }
+.legend .l-today::before { background: transparent; border: 2px solid var(--accent); }
+
+form { display: flex; flex-direction: column; gap: 14px; }
+label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; }
+select, input[type="number"], input[type="date"], input[type="time"] { height: 48px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); padding: 0 12px; width: 100%; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.inline { flex-direction: row; align-items: center; gap: 10px; font-weight: 600; }
+.inline input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
+.hint { font-weight: 400; color: var(--muted); font-size: 13px; }
+.primary { height: 52px; border-radius: 12px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 17px; cursor: pointer; }
+.link-btn { background: none; border: 0; color: var(--muted); font-size: 14px; cursor: pointer; text-decoration: underline; padding: 8px; align-self: center; }
+.danger { color: var(--danger); font-weight: 600; }
+.remind { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.remind input[type="time"] { width: 130px; }
+.note { font-size: 13px; color: var(--muted); text-align: center; margin: 0; min-height: 1.4em; }
+@media (max-width: 380px) { .surah-ar { font-size: 44px; } .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+const SURAHS = ["الفاتحه","البقره","آل عمران","النساء","المائده","الأنعام","الأعراف","الأنفال","التوبه","یونس","هود","یوسف","الرعد","ابراهیم","الحجر","النحل","الإسراء","الکهف","مریم","طه","الأنبیاء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنکبوت","الروم","لقمان","السجده","الأحزاب","سبأ","فاطر","یس","الصافات","ص","الزمر","غافر","فصلت","الشوری","الزخرف","الدخان","الجاثیه","الأحقاف","محمد","الفتح","الحجرات","ق","الذاریات","الطور","النجم","القمر","الرحمن","الواقعه","الحدید","المجادله","الحشر","الممتحنه","الصف","الجمعه","المنافقون","التغابن","الطلاق","التحریم","الملک","القلم","الحاقه","المعارج","نوح","الجن","المزمل","المدثر","القیامه","الانسان","المرسلات","النبأ","النازعات","عبس","التکویر","الإنفطار","المطففین","الإنشقاق","البروج","الطارق","الأعلی","الغاشیه","الفجر","البلد","الشمس","اللیل","الضحی","الشرح","التین","العلق","القدر","البینه","الزلزله","العادیات","القارعه","التکاثر","العصر","الهمزه","الفیل","قریش","الماعون","الکوثر","الکافرون","النصر","المسد","الإخلاص","الفلق","الناس"];
+
+const app = document.getElementById("app");
+const LS_KEY = "khatm40-plan";
+let plan = null;
+let confirmReset = false;
+let note = "";
+
+const fa = n => Number(n).toLocaleString("fa-IR");
+const pad = n => String(n).padStart(2, "0");
+const ymd = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parse = s => { const p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const dayDiff = (a, b) => Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+const jalali = d => { try { return new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", month: "long" }).format(d); } catch (e) { return ""; } };
+const jalaliFull = d => { try { return new Intl.DateTimeFormat("fa-IR-u-ca-persian", { day: "numeric", month: "long", year: "numeric" }).format(d); } catch (e) { return ""; } };
+
+/* ---------- storage ---------- */
+function lsRead() { try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lsWrite(p) { try { if (p) localStorage.setItem(LS_KEY, JSON.stringify(p)); else localStorage.removeItem(LS_KEY); } catch (e) {} }
+function persist() { lsWrite(plan); scheduleReminders(); }
+function valid(p) { return p && typeof p.surah === "number" && p.surah >= 1 && p.surah <= 114 && typeof p.days === "number" && typeof p.start === "string" && Array.isArray(p.done); }
+
+/* Reminders: a web page cannot schedule alarms on its own, so the app builds a calendar file instead. */
+function scheduleReminders() {}
+
+function icsEscape(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,"); }
+function buildIcs() {
+  const hm = (plan.time || "08:00").split(":").map(Number);
+  const s = parse(plan.start);
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const local = s.getFullYear() + pad(s.getMonth() + 1) + pad(s.getDate()) + "T" + pad(hm[0]) + pad(hm[1]) + "00";
+  const title = "ختم سوره‌ی " + SURAHS[plan.surah - 1];
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//khatm40//FA", "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:khatm40-" + plan.surah + "-" + plan.start + "@khatm40",
+    "DTSTAMP:" + stamp,
+    "DTSTART:" + local,
+    "DURATION:PT15M",
+    "RRULE:FREQ=DAILY;COUNT=" + plan.days,
+    "SUMMARY:" + icsEscape(title),
+    "DESCRIPTION:" + icsEscape("وقت خواندن است"),
+    "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(title), "TRIGGER:PT0M", "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"
+  ];
+  return lines.join("\r\n") + "\r\n";
+}
+function downloadIcs() {
+  try {
+    const blob = new Blob([buildIcs()], { type: "text/calendar;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "khatm-" + plan.surah + ".ics";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    note = "فایل ساخته شد. آن را باز کنید تا در تقویم گوشی اضافه شود.";
+  } catch (e) { note = "ساخت فایل تقویم انجام نشد."; }
+  render();
+}
+
+/* ---------- logic ---------- */
+function currentDay() { return dayDiff(parse(plan.start), new Date()) + 1; }
+function has(d) { return plan.done.indexOf(d) >= 0; }
+function toggle(d) {
+  const i = plan.done.indexOf(d);
+  if (i >= 0) plan.done.splice(i, 1); else plan.done.push(d);
+  persist(); render();
+}
+
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+
+function renderSetup() {
+  const opts = SURAHS.map((n, i) => '<option value="' + (i + 1) + '">' + fa(i + 1) + " ـ " + n + "</option>").join("");
+  app.innerHTML =
+    "<h1>ختم چهل‌روزه</h1>" +
+    '<form class="card" id="setup">' +
+      '<label for="surah">سوره<select id="surah">' + opts + "</select></label>" +
+      '<div class="row">' +
+        '<label for="days">تعداد روز<input id="days" type="number" inputmode="numeric" min="1" max="365" value="40"></label>' +
+        '<label for="start">تاریخ شروع<input id="start" type="date" value="' + ymd(new Date()) + '"></label>' +
+      "</div>" +
+      '<span class="hint" id="startFa"></span>' +
+      '<label for="time">ساعت یادآوری در تقویم<input id="time" type="time" value="08:00"></label>' +
+      '<button class="primary" type="submit">شروع</button>' +
+    "</form>" +
+    '<p class="note">' + note + "</p>";
+  document.getElementById("surah").value = "36";
+  const start = document.getElementById("start");
+  const startFa = document.getElementById("startFa");
+  const upd = () => { startFa.textContent = start.value ? "شروع: " + jalaliFull(parse(start.value)) : ""; };
+  start.addEventListener("input", upd); upd();
+  document.getElementById("setup").addEventListener("submit", e => {
+    e.preventDefault();
+    const days = Math.min(365, Math.max(1, parseInt(document.getElementById("days").value, 10) || 40));
+    plan = {
+      surah: parseInt(document.getElementById("surah").value, 10),
+      days: days,
+      start: start.value || ymd(new Date()),
+      time: document.getElementById("time").value || "08:00",
+      done: []
+    };
+    note = ""; persist(); render();
+  });
+}
+
+function renderPlan() {
+  const cur = currentDay();
+  const total = plan.days;
+  const inRange = cur >= 1 && cur <= total;
+  const doneCount = plan.done.filter(d => d >= 1 && d <= total).length;
+  const startDate = parse(plan.start);
+  const name = SURAHS[plan.surah - 1];
+  const finished = doneCount >= total;
+  let missed = 0;
+  for (let d = 1; d <= Math.min(cur - 1, total); d++) if (!has(d)) missed++;
+
+  let dayText;
+  if (cur < 1) dayText = "شروع از " + jalali(startDate);
+  else if (cur > total) dayText = "مدت " + fa(total) + " روزه تمام شد";
+  else dayText = "روز " + fa(cur) + " <small>از " + fa(total) + "</small>";
+
+  let cells = "";
+  for (let d = 1; d <= total; d++) {
+    const date = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + d - 1);
+    let cls = "cell";
+    if (has(d)) cls += " done"; else if (d < cur) cls += " missed"; else if (d > cur) cls += " future";
+    if (d === cur) cls += " today";
+    cells += '<button class="' + cls + '" data-day="' + d + '" aria-pressed="' + has(d) + '" aria-label="روز ' + fa(d) + " " + jalali(date) + '"' + (d > cur ? " disabled" : "") + ">" + fa(d) + "</button>";
+  }
+
+  const todayDone = inRange && has(cur);
+  const checkLabel = finished ? "ختم کامل شد" : (todayDone ? "امروز خوانده شد" : "امروز خواندم");
+
+  app.innerHTML =
+    "<h1>ختم " + fa(total) + " روزه</h1>" +
+    '<section class="card hero"><span class="kicker">سوره‌ی شماره‌ی ' + fa(plan.surah) + "</span>" +
+      '<p class="surah-ar" lang="ar">' + name + "</p>" +
+      '<a class="read-link" id="read" href="https://quran.com/' + plan.surah + '" target="_blank" rel="noopener">خواندن متن سوره ' + ICON_OPEN + "</a>" +
+    "</section>" +
+    '<button class="check" id="today" aria-pressed="' + todayDone + '"' + (inRange ? "" : " disabled") + ">" + ICON_CHECK + "<span>" + checkLabel + "</span></button>" +
+    '<section class="status"><p class="day-line">' + dayText + "</p>" +
+      '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + doneCount + '"><i style="width:' + Math.round(doneCount / total * 100) + '%"></i></div>' +
+      '<p class="sub">' + fa(doneCount) + " روز خوانده شده" + (missed > 0 ? " · " + fa(missed) + " روز جا افتاده" : "") + "</p>" +
+    "</section>" +
+    '<section class="card"><div class="grid">' + cells + "</div>" +
+      '<p class="legend"><span>خوانده شده</span><span class="l-today">امروز</span><span class="l-missed">جا افتاده، با لمس جبران می‌شود</span></p></section>' +
+    '<section class="card remind"><label class="inline" for="remind-time">ساعت یادآوری</label>' +
+      '<input id="remind-time" type="time" aria-label="ساعت یادآوری" value="' + (plan.time || "08:00") + '">' +
+      '<button class="primary" id="ics" type="button" style="flex-basis:100%">افزودن یادآوری روزانه به تقویم</button></section>' +
+    (confirmReset
+      ? '<button class="link-btn danger" id="reset-yes">بله، ختم جدید شروع شود و پیشرفت پاک شود</button><button class="link-btn" id="reset-no">انصراف</button>'
+      : '<button class="link-btn" id="reset">ختم جدید</button>') +
+    '<p class="note">' + note + "</p>";
+
+  const t = document.getElementById("today");
+  if (t && inRange) t.addEventListener("click", () => toggle(cur));
+  app.querySelectorAll(".cell").forEach(b => b.addEventListener("click", () => {
+    const d = parseInt(b.getAttribute("data-day"), 10);
+    if (d <= cur) toggle(d);
+  }));
+  document.getElementById("remind-time").addEventListener("change", e => { plan.time = e.target.value || "08:00"; note = ""; persist(); });
+  document.getElementById("ics").addEventListener("click", downloadIcs);
+  const r = document.getElementById("reset"); if (r) r.addEventListener("click", () => { confirmReset = true; render(); });
+  const rn = document.getElementById("reset-no"); if (rn) rn.addEventListener("click", () => { confirmReset = false; render(); });
+  const ry = document.getElementById("reset-yes"); if (ry) ry.addEventListener("click", () => { confirmReset = false; plan = null; persist(); render(); });
+}
+
+function render() { if (plan) renderPlan(); else renderSetup(); }
+
+const saved = lsRead();
+if (valid(saved)) plan = saved;
+render();
+if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); }); }
+</script>
+</body>
+</html>
